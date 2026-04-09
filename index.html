@@ -1,25 +1,135 @@
-<div class="input-group">
-  <input type="time" id="startzeit" required>
-  <label>Startzeit</label>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feierabend Rechner</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/stundenanzeiger/manifest.json">
+  <meta name="theme-color" content="#667eea">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: center;
+      width: 320px;
+      z-index: 1;
+    }
+
+    h2 { margin-bottom: 30px; color: #333; }
+
+    .input-group { position: relative; margin-bottom: 25px; }
+
+    .input-group input {
+      width: 100%;
+      padding: 16px 12px;
+      font-size: 18px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+
+    .input-group label {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #777;
+      font-size: 16px;
+      transition: 0.3s;
+      background: white;
+      padding: 0 5px;
+    }
+
+    .input-group input:focus + label,
+    .input-group input:valid + label {
+      top: -8px;
+      font-size: 13px;
+      color: #667eea;
+    }
+
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 18px;
+      font-size: 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    #ergebnis {
+      margin-top: 20px;
+      font-size: 22px;
+      font-weight: bold;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: 0.3s;
+    }
+
+    #ergebnis.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>⏰ Feierabend Rechner</h2>
+
+  <div class="input-group">
+    <input type="time" id="startzeit" required>
+    <label>Startzeit</label>
+  </div>
+
+  <div class="input-group">
+    <input type="time" id="pauseStart" required>
+    <label>Pausenbeginn</label>
+  </div>
+
+  <div class="input-group">
+    <input type="time" id="pauseEnde" required>
+    <label>Pausenende</label>
+  </div>
+
+  <button onclick="berechneFeierabend()">Feierabend berechnen</button>
+
+  <p id="ergebnis"></p>
 </div>
 
-<div class="input-group">
-  <input type="time" id="pauseStart" required>
-  <label>Pausenbeginn</label>
-</div>
-
-<div class="input-group">
-  <input type="time" id="pauseEnde" required>
-  <label>Pausenende</label>
-</div>
-
-<button onclick="berechneFeierabend()">Feierabend berechnen</button>
+<canvas id="confetti"></canvas>
 
 <script>
 function berechneFeierabend() {
   const start = document.getElementById("startzeit").value;
   const pStart = document.getElementById("pauseStart").value;
   const pEnd = document.getElementById("pauseEnde").value;
+
   if (!start || !pStart || !pEnd) return alert("Alle Zeiten eingeben");
 
   const [sh, sm] = start.split(":").map(Number);
@@ -30,14 +140,14 @@ function berechneFeierabend() {
   const pauseStartDate = new Date(0,0,0,ph,pm);
   const pauseEndDate = new Date(0,0,0,peh,pem);
 
-  // Pausenzeit in Minuten
-  const pauseMinutes = (pauseEndDate - pauseStartDate) / 60000;
+  if (pauseEndDate <= pauseStartDate) return alert("Pausenende muss nach Pausenbeginn liegen");
+  if (pauseStartDate <= startDate) return alert("Pausenbeginn muss nach Startzeit liegen");
+
+  // Arbeitszeit vor Pause in Minuten
+  const workBeforePause = (pauseStartDate - startDate) / 60000;
 
   // Zielarbeitszeit 8h59min = 539 min
   const totalWorkMinutes = 539;
-
-  // Arbeitszeit vor Pause
-  const workBeforePause = (pauseStartDate - startDate) / 60000;
 
   // Noch zu arbeiten nach Pause
   const remainingWork = totalWorkMinutes - workBeforePause;
@@ -49,5 +159,56 @@ function berechneFeierabend() {
   const out = document.getElementById("ergebnis");
   out.textContent = `🎉 Feierabend um ${f(feierabendDate.getHours())}:${f(feierabendDate.getMinutes())}`;
   out.classList.add("show");
+
+  startConfetti();
+}
+
+/* Confetti (zeitlich begrenzt) */
+const canvas = document.getElementById("confetti");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+let confetti = [];
+
+function startConfetti() {
+  confetti = [];
+  for (let i = 0; i < 120; i++) {
+    confetti.push({
+      x: Math.random() * canvas.width,
+      y: -10,
+      r: Math.random() * 6 + 2,
+      speed: Math.random() * 3 + 2
+    });
+  }
+
+  let startTime = Date.now();
+
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    confetti.forEach(c => {
+      c.y += c.speed;
+      ctx.fillRect(c.x, c.y, c.r, c.r);
+    });
+
+    if (Date.now() - startTime < 2000) {
+      requestAnimationFrame(loop);
+    }
+  }
+
+  loop();
+}
+
+/* Service Worker */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/stundenanzeiger/sw.js");
 }
 </script>
+
+</body>
+</html>
