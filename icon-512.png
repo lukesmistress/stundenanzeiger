@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feierabend</title>
+<style>
+       * { margin: 0; padding: 0; box-sizing: border-box; }
+       body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+</style>
+</head>
+<body>
+</body>
+</html><!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Feierabend Rechner</title>
+<style>
+   body {
+     font-family: Arial, sans-serif;
+     background: linear-gradient(135deg, #667eea, #764ba2);
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     height: 100vh;
+     margin: 0;
+   }
+   .card {
+     background: white;
+     padding: 40px;
+     border-radius: 20px;
+     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+     text-align: center;
+     width: 320px;
+   }
+   h2 {
+     margin-bottom: 30px;
+     color: #333;
+   }
+   /* Floating Label */
+   .input-group {
+     position: relative;
+     margin-bottom: 25px;
+   }
+   .input-group input {
+     width: 100%;
+     padding: 16px 12px;
+     font-size: 18px;
+     border-radius: 10px;
+     border: 1px solid #ccc;
+     outline: none;
+   }
+   .input-group label {
+     position: absolute;
+     left: 12px;
+     top: 50%;
+     transform: translateY(-50%);
+     color: #777;
+     font-size: 16px;
+     pointer-events: none;
+     transition: 0.3s ease;
+     background: white;
+     padding: 0 5px;
+   }
+   .input-group input:focus + label,
+   .input-group input:valid + label {
+     top: -8px;
+     font-size: 13px;
+     color: #667eea;
+   }
+   button {
+     background: #667eea;
+     color: white;
+     border: none;
+     padding: 18px;
+     font-size: 18px;
+     border-radius: 12px;
+     cursor: pointer;
+     width: 100%;
+     transition: transform 0.2s, background 0.2s;
+   }
+   button:hover {
+     background: #5a67d8;
+     transform: scale(1.05);
+   }
+   #ergebnis {
+     margin-top: 20px;
+     font-size: 22px;
+     font-weight: bold;
+     color: #333;
+     opacity: 0;
+     transform: translateY(10px);
+     transition: all 0.4s ease;
+   }
+   #ergebnis.show {
+     opacity: 1;
+     transform: translateY(0);
+   }
+   canvas {
+     position: fixed;
+     top: 0;
+     left: 0;
+     pointer-events: none;
+   }
+</style>
+</head>
+<body>
+<div class="card">
+<h2>⏰ Feierabend Rechner</h2>
+<div class="input-group">
+<input type="time" id="startzeit" required>
+<label>Startzeit</label>
+</div>
+<button onclick="berechneFeierabend()">Feierabend berechnen</button>
+<p id="ergebnis"></p>
+</div>
+<canvas id="confetti"></canvas>
+<script>
+function berechneFeierabend() {
+ const start = document.getElementById("startzeit").value;
+ if (!start) {
+   alert("Bitte Startzeit eingeben!");
+   return;
+ }
+ const [stunden, minuten] = start.split(":").map(Number);
+ let endStunden = stunden + 8;
+ let endMinuten = minuten + 42;
+ if (endMinuten >= 60) {
+   endStunden += Math.floor(endMinuten / 60);
+   endMinuten = endMinuten % 60;
+ }
+ endStunden = endStunden % 24;
+ const format = (n) => n.toString().padStart(2, "0");
+ const ergebnis = document.getElementById("ergebnis");
+ ergebnis.innerText = "🎉 Feierabend um " + format(endStunden) + ":" + format(endMinuten);
+ ergebnis.classList.add("show");
+ startConfetti();
+}
+// 🎉 Confetti
+const canvas = document.getElementById("confetti");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+let confetti = [];
+function startConfetti() {
+ confetti = [];
+ for (let i = 0; i < 150; i++) {
+   confetti.push({
+     x: Math.random() * canvas.width,
+     y: Math.random() * canvas.height - canvas.height,
+     r: Math.random() * 6 + 2,
+     color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+     speed: Math.random() * 3 + 2
+   });
+ }
+ animateConfetti();
+}
+function drawConfetti() {
+ ctx.clearRect(0, 0, canvas.width, canvas.height);
+ confetti.forEach(c => {
+   ctx.fillStyle = c.color;
+   ctx.fillRect(c.x, c.y, c.r, c.r);
+ });
+ updateConfetti();
+}
+function updateConfetti() {
+ confetti.forEach(c => {
+   c.y += c.speed;
+   if (c.y > canvas.height) {
+     c.y = -10;
+     c.x = Math.random() * canvas.width;
+   }
+ });
+}
+function animateConfetti() {
+ drawConfetti();
+ requestAnimationFrame(animateConfetti);
+}
+</script>
+</body>
+</html>
