@@ -6,15 +6,11 @@
   <title>Feierabend Rechner</title>
 
   <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="/stundenanzeiger/manifest.json">
   <meta name="theme-color" content="#667eea">
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: Arial, sans-serif;
@@ -35,15 +31,9 @@
       z-index: 1;
     }
 
-    h2 {
-      margin-bottom: 30px;
-      color: #333;
-    }
+    h2 { margin-bottom: 30px; color: #333; }
 
-    .input-group {
-      position: relative;
-      margin-bottom: 25px;
-    }
+    .input-group { position: relative; margin-bottom: 25px; }
 
     .input-group input {
       width: 100%;
@@ -61,8 +51,7 @@
       transform: translateY(-50%);
       color: #777;
       font-size: 16px;
-      pointer-events: none;
-      transition: 0.3s ease;
+      transition: 0.3s;
       background: white;
       padding: 0 5px;
     }
@@ -83,22 +72,15 @@
       border-radius: 12px;
       cursor: pointer;
       width: 100%;
-      transition: transform 0.2s, background 0.2s;
-    }
-
-    button:hover {
-      background: #5a67d8;
-      transform: scale(1.05);
     }
 
     #ergebnis {
       margin-top: 20px;
       font-size: 22px;
       font-weight: bold;
-      color: #333;
       opacity: 0;
       transform: translateY(10px);
-      transition: all 0.4s ease;
+      transition: 0.3s;
     }
 
     #ergebnis.show {
@@ -117,89 +99,94 @@
 
 <body>
 
-  <div class="card">
-    <h2>⏰ Feierabend Rechner</h2>
+<div class="card">
+  <h2>⏰ Feierabend Rechner</h2>
 
-    <div class="input-group">
-      <input type="time" id="startzeit" required>
-      <label>Startzeit</label>
-    </div>
-
-    <button onclick="berechneFeierabend()">Feierabend berechnen</button>
-
-    <p id="ergebnis"></p>
+  <div class="input-group">
+    <input type="time" id="startzeit" required>
+    <label>Startzeit</label>
   </div>
 
-  <canvas id="confetti"></canvas>
+  <button onclick="berechneFeierabend()">Feierabend berechnen</button>
 
-  <script>
-    function berechneFeierabend() {
-      const start = document.getElementById("startzeit").value;
-      if (!start) {
-        alert("Bitte Startzeit eingeben!");
-        return;
-      }
+  <p id="ergebnis"></p>
+</div>
 
-      const [stunden, minuten] = start.split(":").map(Number);
+<canvas id="confetti"></canvas>
 
-      let endStunden = stunden + 8;
-      let endMinuten = minuten + 42;
+<script>
+function berechneFeierabend() {
+  const start = document.getElementById("startzeit").value;
+  if (!start) return alert("Startzeit fehlt");
 
-      if (endMinuten >= 60) {
-        endStunden += Math.floor(endMinuten / 60);
-        endMinuten %= 60;
-      }
+  const [h, m] = start.split(":").map(Number);
 
-      endStunden %= 24;
+  let endH = h + 8;
+  let endM = m + 42;
 
-      const format = n => n.toString().padStart(2, "0");
+  if (endM >= 60) {
+    endH += Math.floor(endM / 60);
+    endM %= 60;
+  }
 
-      const ergebnis = document.getElementById("ergebnis");
-      ergebnis.textContent = `🎉 Feierabend um ${format(endStunden)}:${format(endMinuten)}`;
-      ergebnis.classList.add("show");
+  endH %= 24;
 
-      startConfetti();
+  const f = n => n.toString().padStart(2, "0");
+
+  const out = document.getElementById("ergebnis");
+  out.textContent = `🎉 Feierabend um ${f(endH)}:${f(endM)}`;
+  out.classList.add("show");
+
+  startConfetti();
+}
+
+/* Confetti (zeitlich begrenzt) */
+const canvas = document.getElementById("confetti");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+let confetti = [];
+
+function startConfetti() {
+  confetti = [];
+  for (let i = 0; i < 120; i++) {
+    confetti.push({
+      x: Math.random() * canvas.width,
+      y: -10,
+      r: Math.random() * 6 + 2,
+      speed: Math.random() * 3 + 2
+    });
+  }
+
+  let start = Date.now();
+
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    confetti.forEach(c => {
+      c.y += c.speed;
+      ctx.fillRect(c.x, c.y, c.r, c.r);
+    });
+
+    if (Date.now() - start < 2000) {
+      requestAnimationFrame(loop);
     }
+  }
 
-    // Confetti
-    const canvas = document.getElementById("confetti");
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+  loop();
+}
 
-    let confetti = [];
-
-    function startConfetti() {
-      confetti = [];
-      for (let i = 0; i < 150; i++) {
-        confetti.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height - canvas.height,
-          r: Math.random() * 6 + 2,
-          color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-          speed: Math.random() * 3 + 2
-        });
-      }
-    }
-
-    function animateConfetti() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      confetti.forEach(c => {
-        ctx.fillStyle = c.color;
-        ctx.fillRect(c.x, c.y, c.r, c.r);
-        c.y += c.speed;
-        if (c.y > canvas.height) c.y = -10;
-      });
-      requestAnimationFrame(animateConfetti);
-    }
-
-    animateConfetti();
-
-    // Service Worker Registrierung
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js");
-    }
-  </script>
+/* Service Worker */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/stundenanzeiger/sw.js");
+}
+</script>
 
 </body>
 </html>
